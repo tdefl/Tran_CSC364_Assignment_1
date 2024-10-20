@@ -10,10 +10,10 @@ import glob
 # The purpose of this function is to set up a socket connection.
 def create_socket(host, port):
     # 1. Create a socket.
-    ## soc = ...
+    soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # 2. Try connecting the socket to the host and port.
     try:
-        ## ...
+        soc.connect((host, port))
     except:
         print("Connection Error to", port)
         sys.exit()
@@ -30,14 +30,13 @@ def read_csv(path):
     # 3. Create an empty list to store each processed row.
     table_list = []
     # 4. For each line in the file:
-    ## for ...:
-        # 5. split it by the delimiter,
-        ## ...
-        # 6. remove any leading or trailing spaces in each element, and
-        ## ...
-        # 7. append the resulting list to table_list.
-        ## table_list.append(...)
-    # 8. Close the file and return table_list.
+    for line in table:
+        # split it into a list of strings by the delimiter using .split(","), 
+        # remove any leading/trailing spaces using strip(), and append resulting list to table_list
+        parsed_line = [element.strip() for element in line.strip().split(",")]
+        table_list.append(parsed_line)
+        
+    # Close the file and return table_list.
     table_file.close()
     return table_list
 
