@@ -4,7 +4,6 @@ import time
 import os
 import glob
 
-
 # Helper Functions
 
 # The purpose of this function is to set up a socket connection.
