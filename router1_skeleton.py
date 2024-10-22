@@ -28,16 +28,33 @@ def read_csv(path):
     table = table_file.readlines()
     # 3. Create an empty list to store each processed row.
     table_list = []
+
     # 4. For each line in the file:
+    # FIB allows routers to do fast lookup, so I'll use a dictionary for better lookup times than a list of lists
+    # for line in table:
+    #     # split it into a list of strings by the delimiter using .split(","), 
+    #     # remove any leading/trailing spaces using strip(), and append resulting list to table_list
+    #     parsed_line = [element.strip() for element in line.strip().split(",")]
+    #     table_list.append(parsed_line)
+
+    forwarding_dict = {}
     for line in table:
-        # split it into a list of strings by the delimiter using .split(","), 
-        # remove any leading/trailing spaces using strip(), and append resulting list to table_list
-        parsed_line = [element.strip() for element in line.strip().split(",")]
-        table_list.append(parsed_line)
-        
-    # Close the file and return table_list.
+        ip_dst, netmask, gateway, interface = [element.strip() for element in line.strip().split(",")]
+
+        # store parsed data in a dictionary of dictionaries. 
+        # forwarding_dict[ip_dst] = [
+        #     netmask, gateway, interface
+        # ]
+        forwarding_dict[ip_dst] = {
+            'netmask' : netmask,
+            'gateway' : gateway,
+            'interface' : interface
+        }
+        # { ip_dst : [netmask, gateway, interface]}
+
+    # Close the csv file and return the parsed forwarding table.
     table_file.close()
-    return table_list
+    return forwarding_dict
 
 
 # The purpose of this function is to find the default port
@@ -49,6 +66,7 @@ def find_default_gateway(table):
         ## if ...:
             # 3. then return the interface of that row.
             ## return ...
+    print("hello world")
 
 
 # The purpose of this function is to generate a forwarding table that includes the IP range for a given interface.
@@ -101,7 +119,12 @@ def ip_to_bin(ip):
         ## ip_bin_string = ...
     # 9. Once the entire string version of the binary IP is created, convert it into an actual binary int.
     ## ip_int = ...
+
+
     # 10. Return the binary representation of this int.
+    
+    
+    ip_int = 0
     return bin(ip_int)
 
 
@@ -120,6 +143,8 @@ def find_ip_range(network_dst, netmask):
     # to get the maximum IP address in the range.
     ## max_ip = ...
     # 4. Return a list containing the minimum and maximum IP in the range.
+
+    min_ip, max_ip = 0, 0
     return [min_ip, max_ip]
 
 
@@ -134,12 +159,13 @@ def write_to_file(path, packet_to_write, send_to_router=None):
     out_file = open(path, "a")
     # 2. If this router is not sending, then just append the packet to the output file.
     ## if ...:
-        out_file.write(packet_to_write + "\n")
-    # 3. Else if this router is sending, then append the intended recipient, along with the packet, to the output file.
-    else:
-        out_file.write(packet_to_write + " " + "to Router " + send_to_router + "\n")
-    # 4. Close the output file.
-    out_file.close()
+    pass
+    #     out_file.write(packet_to_write + "\n")
+    # # 3. Else if this router is sending, then append the intended recipient, along with the packet, to the output file.
+    # else:
+    #     out_file.write(packet_to_write + " " + "to Router " + send_to_router + "\n")
+    # # 4. Close the output file.
+    # out_file.close()
 
 
 # Main Program
@@ -155,7 +181,12 @@ for f in files:
 ## ...
 
 # 2. Read in and store the forwarding table.
-## forwarding_table = ...
+inputs_dir = "input"
+FIB_filename = "router_1_table.csv"
+forwarding_table_path = os.path.join(inputs_dir, FIB_filename)
+
+forwarding_table = read_csv(forwarding_table_path)
+print(forwarding_table)
 # 3. Store the default gateway port.
 ## default_gateway_port = ...
 # 4. Generate a new forwarding table that includes the IP ranges for matching against destination IPS.
@@ -191,17 +222,17 @@ for f in files:
     # (b) append the payload to out_router_1.txt without forwarding because this router is the last hop, or
     # (c) append the new packet to discarded_by_router_1.txt and do not forward the new packet
     ## if ...:
-        print("sending packet", new_packet, "to Router 2")
-        ## ...
-    ## elif ...
-        print("sending packet", new_packet, "to Router 4")
-        ## ...
-    ## elif ...:
-        print("OUT:", payload)
-        ## ...
-    else:
-        print("DISCARD:", new_packet)
-        ## ...
+    #     print("sending packet", new_packet, "to Router 2")
+    #     ## ...
+    # ## elif ...
+    #     print("sending packet", new_packet, "to Router 4")
+    #     ## ...
+    # ## elif ...:
+    #     print("OUT:", payload)
+    #     ## ...
+    # else:
+    #     print("DISCARD:", new_packet)
+    #     ## ...
 
-    # Sleep for some time before sending the next packet (for debugging purposes)
-    time.sleep(1)
+    # # Sleep for some time before sending the next packet (for debugging purposes)
+    # time.sleep(1)
