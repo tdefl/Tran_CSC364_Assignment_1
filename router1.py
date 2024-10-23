@@ -240,6 +240,10 @@ packets_table = read_packets(packets_table_path)
 
 print(packets_table)
 
+# Ensure the output directory exists
+if not os.path.exists('./output'):
+    os.makedirs('./output')
+
 # # 6. For each packet,
 for packet in packets_table:
     # 7. Store the source IP, destination IP, payload, and TTL.
@@ -265,8 +269,9 @@ for packet in packets_table:
         continue
 
     # 9. Convert the destination IP into an integer for comparison purposes.
-    destination_ip_bin = ip_to_bin(destination_ip)
-    destination_ip_int = int(destination_ip_bin)
+    # destination_ip_bin = ip_to_bin(destination_ip)
+    # destination_ip_int = int(destination_ip_bin)
+    destination_ip_int = ip_to_bin(destination_ip)
 
     # 9. Find the appropriate sending port to forward this new packet to.
     sending_port = None
@@ -274,7 +279,8 @@ for packet in packets_table:
     # Check which range it falls into
     for ip_dst, details in forwarding_table_with_range.items():
         
-        if details['min_ip'] <= destination_ip_bin and destination_ip_bin <= details['max_ip']:
+        # if details['min_ip'] <= destination_ip_bin and destination_ip_bin <= details['max_ip']:
+        if details['min_ip'] <= destination_ip_int and destination_ip_int <= details['max_ip']:
             sending_port = details['interface']
         
         # 10. If no port is found, then set the sending port to the default port.

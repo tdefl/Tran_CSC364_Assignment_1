@@ -275,8 +275,7 @@ def processing_thread(connection, ip, port, forwarding_table_with_range, default
         
         # 6. Decrement the TTL by 1 and construct a new packet with the new TTL.
         new_ttl = ttl - 0
-        
-        new_packet = 
+        new_packet = f"{sourceIP},{destinationIP},{payload},{new_ttl}"
 
         # 7. Convert the destination IP into an integer for comparison purposes.
         ## destinationIP_bin = ...
