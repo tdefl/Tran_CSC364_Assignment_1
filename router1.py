@@ -20,44 +20,6 @@ def create_socket(host, port):
     return soc
 
 
-# # The purpose of this function is to read in a CSV file.
-# def read_csv(path):
-#     # 1. Open the file for reading.
-#     table_file = open(path, "r")
-#     # 2. Store each line.
-#     table = table_file.readlines()
-#     # 3. Create an empty list to store each processed row.
-#     table_list = []
-
-#     # 4. For each line in the file:
-#     # FIB allows routers to do fast lookup, so I'll use a dictionary for better lookup times than a list of lists
-#     # for line in table:
-#     #     # split it into a list of strings by the delimiter using .split(","), 
-#     #     # remove any leading/trailing spaces using strip(), and append resulting list to table_list
-#     #     parsed_line = [element.strip() for element in line.strip().split(",")]
-#     #     table_list.append(parsed_line)
-
-#     # i guess i've now used this to specifically read a forwarding table. 
-#     forwarding_dict = {}
-#     for line in table:
-#         network_dst, netmask, gateway, interface = [element.strip() for element in line.strip().split(",")]
-
-#         # store parsed data in a dictionary of dictionaries. 
-#         # forwarding_dict[network_dst] = [
-#         #     netmask, gateway, interface
-#         # ]
-#         forwarding_dict[network_dst] = {
-#             'netmask' : netmask,
-#             'gateway' : gateway,
-#             'interface' : interface
-#         }
-#         # { network_dst : [netmask, gateway, interface]}
-
-#     # Close the csv file and return the parsed forwarding table.
-#     table_file.close()
-#     return forwarding_dict
-
-
 # The purpose of this function is to read in a CSV file.
 def read_forwarding_table(path):
     # 1. Open the file for reading.
