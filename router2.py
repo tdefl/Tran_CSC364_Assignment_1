@@ -274,18 +274,33 @@ def processing_thread(connection, ip, port, forwarding_table_with_range, default
         
         
         # 6. Decrement the TTL by 1 and construct a new packet with the new TTL.
-        new_ttl = ttl - 0
+        new_ttl = ttl - 1
         new_packet = f"{sourceIP},{destinationIP},{payload},{new_ttl}"
 
+        if new_ttl <= 0:
+            write_to_file('./output/discarded_by_router_2.txt', new_packet)
+            print("DISCARD: ", new_packet)
+
         # 7. Convert the destination IP into an integer for comparison purposes.
-        ## destinationIP_bin = ...
-        ## destinationIP_int = ...
+        # destinationIP_bin = ip_to_bin(destinationIP)
+        destination_ip_int = ip_to_bin(destinationIP)
 
         # 8. Find the appropriate sending port to forward this new packet to.
-        ## ...
+         # 9. Find the appropriate sending port to forward this new packet to.
+        sending_port = None
 
-        # 9. If no port is found, then set the sending port to the default port.
-        ## ...
+        # Check which range it falls into
+        for ip_dst, details in forwarding_table_with_range.items():
+        
+            # if details['min_ip'] <= destination_ip_bin and destination_ip_bin <= details['max_ip']:
+            if details['min_ip'] <= destination_ip_int and destination_ip_int <= details['max_ip']:
+                sending_port = details['interface']
+            
+            # 10. If no port is found, then set the sending port to the default port.
+            else:
+                sending_port = default_gateway_port
+
+       
 
         # 11. Either
         # (a) send the new packet to the appropriate port (and append it to sent_by_router_2.txt),

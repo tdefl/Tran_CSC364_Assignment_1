@@ -266,6 +266,7 @@ for packet in packets_table:
     # log dropped packets. 
     if new_ttl <= 0:
         write_to_file('./output/dropped_packets_router_1.txt', str(new_packet))
+        print("DISCARD: ", new_packet)
         continue
 
     # 9. Convert the destination IP into an integer for comparison purposes.
