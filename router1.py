@@ -209,25 +209,6 @@ def ip_to_bin(ip):
 
 
 # The purpose of this function is to find the range of IPs inside a given a destination IP address/subnet mask pair.
-# def find_ip_range(network_dst, netmask):
-#     # 1. Perform a bitwise AND on the network destination and netmask
-#     # to get the minimum IP address in the range.
-#     ## bitwise_and = ...
-#     # 2. Perform a bitwise NOT on the netmask
-#     # to get the number of total IPs in this range.
-#     # Because the built-in bitwise NOT or compliment operator (~) works with signed ints,
-#     # we need to create our own bitwise NOT operator for our unsigned int (a netmask).
-#     ## compliment = ...
-#     ## min_ip = ...
-#     # 3. Add the total number of IPs to the minimum IP
-#     # to get the maximum IP address in the range.
-#     ## max_ip = ...
-#     # 4. Return a list containing the minimum and maximum IP in the range.
-
-
-#     return [min_ip, max_ip]
-
-
 def find_ip_range(network_dst_bin, netmask_bin):
     # Perform a bitwise AND to get the minimum IP
     min_ip = network_dst_bin & netmask_bin
