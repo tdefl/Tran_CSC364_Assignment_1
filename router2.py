@@ -306,18 +306,23 @@ def processing_thread(connection, ip, port, forwarding_table_with_range, default
         # (a) send the new packet to the appropriate port (and append it to sent_by_router_2.txt),
         # (b) append the payload to out_router_2.txt without forwarding because this router is the last hop, or
         # (c) append the new packet to discarded_by_router_2.txt and do not forward the new packet
-        ## if ...:
-            print("sending packet", new_packet, "to Router 3")
-            ## ...
-        ## elif ...:
-            print("sending packet", new_packet, "to Router 4")
-            ## ...
-        ## elif ...:
+        if sending_port == '8003':
+            print("Sending packet", new_packet, "to Router 3")
+            # router3_socket.send(new_packet.encode())
+            write_to_file('./output/sent_by_router_2.txt', new_packet, sending_port)
+        
+        elif sending_port == '8004':  # Router 4's interface
+            print("Sending packet", new_packet, "to Router 4")
+            # router4_socket.send(new_packet.encode())
+            write_to_file('./output/sent_by_router_2.txt', new_packet, sending_port)
+            
+        elif destinationIP == "127.0.0.1":  # If this is the final destination
             print("OUT:", payload)
-            ## ...
-        else:
+            write_to_file('./output/out_router_2.txt', payload)
+            
+        else:  # If it doesn't match any, entries in FIB
             print("DISCARD:", new_packet)
-            ## ...
+            write_to_file('./output/discarded_by_router_2.txt', new_packet)
 
 
 # Main Program

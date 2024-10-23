@@ -178,6 +178,8 @@ def find_ip_range(network_dst_bin, netmask_bin):
     max_ip = min_ip | compliment
 
     # return a tuple for min, max
+    print("Min ip: " , min_ip)
+    print("Max ip: " , max_ip)
     return [min_ip, max_ip]
 
 # The purpose of this function is to perform a bitwise NOT on an unsigned integer.
@@ -300,11 +302,13 @@ for packet in packets_table:
     # router 1 is connected to router 2's interface (port 8002, hardcoded)
     if sending_port == '8002': # interface of router 2
         print("Sending packet ", new_packet, "to Router 2") 
+        # router2_socket.sendall(new_packet.encode())  # Send the packet to Router 2
         write_to_file('./output/sent_by_router_1.txt', new_packet, sending_port)
     # router 1 is connected to router 4's interface (port 8004, hardcoded)
     elif sending_port == '8004':
-        print("Sending packet ", new_packet, "to Router 2")
-    
+        print("Sending packet ", new_packet, "to Router 4")
+        # router4_socket.sendall(new_packet.encode())  # Send the packet to Router 4
+        write_to_file('./output/sent_by_router_1.txt', new_packet, sending_port)
     # (b) append the payload to out_router_1.txt without forwarding because this router is the last hop
     elif destination_ip == "127.0.0.1":
         print("OUT: " , payload)
