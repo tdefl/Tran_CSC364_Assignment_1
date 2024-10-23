@@ -267,8 +267,8 @@ def processing_thread(connection, ip, port, forwarding_table_with_range, default
     # 1. Connect to the appropriate sending ports (based on the network topology diagram).
     
     # router 2 connects to 3 (server) and 4 (can be both client and server)
-    # router3_socket = create_socket("127.0.0.1", 8003)
-    # router4_socket = create_socket("127.0.0.1", 8004)
+    router3_socket = create_socket("127.0.0.1", 8003)
+    router4_socket = create_socket("127.0.0.1", 8004)
     
     # 2. Continuously process incoming packets
     while True:
@@ -331,12 +331,12 @@ def processing_thread(connection, ip, port, forwarding_table_with_range, default
         # (c) append the new packet to discarded_by_router_2.txt and do not forward the new packet
         if sending_port == '8003':
             print("Sending packet", new_packet, "to Router 3")
-            # router3_socket.sendall(new_packet.encode())
+            router3_socket.sendall(new_packet.encode())
             write_to_file('./output/sent_by_router_2.txt', new_packet, sending_port)
         
         elif sending_port == '8004':  # Router 4's interface
             print("Sending packet", new_packet, "to Router 4")
-            # router4_socket.sendall(new_packet.encode())
+            router4_socket.sendall(new_packet.encode())
             write_to_file('./output/sent_by_router_2.txt', new_packet, sending_port)
             
         elif destinationIP == "127.0.0.1":  # If this is the final destination
@@ -348,12 +348,13 @@ def processing_thread(connection, ip, port, forwarding_table_with_range, default
             write_to_file('./output/discarded_by_router_2.txt', new_packet)
     
     
-    # router3_socket.close()
-    # router4_socket.close()
+    router3_socket.close()
+    router4_socket.close()
     connection.close()
     print("Connections closed by router 2")
 
 # Main Program
 
 # 1. Start the server.
-start_server()
+if __name__ == "__main__":  
+    start_server()
