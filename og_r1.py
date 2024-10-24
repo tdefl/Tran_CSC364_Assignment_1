@@ -79,7 +79,7 @@ def find_default_gateway(table):
     ## for ...:
     for network_dst, details in table.items():
         if network_dst == default_gateway:
-            print("Default gateway found: ", default_gateway)
+            print("Default gateway found")
             return details['interface'] # return the interface (MAC addr) of the gateway
     # if no default gateway found, return None
     print("Default gateway not found")
@@ -90,7 +90,7 @@ def find_default_gateway(table):
 # Given this packet's destination IP, which interface (i.e., port) should I send it out on?
 #def generate_forwarding_table_with_range(table):
     # 1. Create an empty list to store the new forwarding table.
-    # new_table = []
+    new_table = []
     # 2. Traverse the old forwarding table, row by row,
     ## for ...:
         # 3. and process each network destination other than 0.0.0.0
@@ -134,7 +134,6 @@ def generate_forwarding_table_with_range(table):
                 'gateway': details['gateway'],
                 'interface': details['interface']
             }
-    print("Forwarding Table with Range: " , new_table)
     return new_table
 
 # The purpose of this function is to convert a string IP to its binary representation.
@@ -169,7 +168,6 @@ def ip_to_bin(ip):
     ip_int = int(ip_bin_string, 2) # base 2 integer.
 
     # 10. Return the binary representation of this int.
-    
     return ip_int
 
 # The purpose of this function is to find the range of IPs inside a given a destination IP address/subnet mask pair.
@@ -205,8 +203,6 @@ def write_to_file(path, packet_to_write, send_to_router=None):
     
     # 4. Close the output file after finished writing to it.
     out_file.close()
-
-
 
 
 # Main Program
@@ -334,3 +330,5 @@ if __name__ == "__main__":
         router2_socket.close()
         router4_socket.close()
         print("Connections closed by Router 1")
+
+        # this is r1 w/o sxerver

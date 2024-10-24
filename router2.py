@@ -47,6 +47,7 @@ def read_forwarding_table(path):
 
     # Close the csv file and return the parsed forwarding table.
     table_file.close()
+    print("Router 2 FIB: ", forwarding_dict)
     return forwarding_dict
 
 # another csv parsing function, but for packets.
@@ -338,11 +339,15 @@ def processing_thread(connection, ip, port, forwarding_table_with_range, default
             print("Sending packet", new_packet, "to Router 4")
             router4_socket.sendall(new_packet.encode())
             write_to_file('./output/sent_by_router_2.txt', new_packet, sending_port)
-            
+        elif sending_port == 'a':
+            # send back to R1
+            connection.sendall(new_packet.encode())
+            print("R2 send packet to R1")
+            write_to_file('./output/sent_by_router_2.txt', new_packet, "a")
         elif destinationIP == "127.0.0.1":  # If this is the final destination
             print("OUT:", payload)
             write_to_file('./output/out_router_2.txt', payload)
-            
+        
         else:  # If it doesn't match any, entries in FIB
             print("DISCARD:", new_packet)
             write_to_file('./output/discarded_by_router_2.txt', new_packet)
