@@ -190,6 +190,13 @@ def find_ip_range(network_dst_bin, netmask_bin):
 def bit_not(n, numbits=32):
     return (1 << numbits) - 1 - n
 
+# test find_ip_range
+# 10.0.0.200,255.255.255.192,127.0.0.1,127.0.0.1
+test_network_dst = "10.0.0.200"
+test_network_dst_bin = ip_to_bin(test_network_dst)
+print("Testing find_ip_range: ")
+find_ip_range(test_network_dst_bin, 26)
+
 
 # The purpose of this function is to write packets/payload to file.
 def write_to_file(path, packet_to_write, send_to_router=None):
@@ -241,6 +248,7 @@ if __name__ == "__main__":
         default_gateway_port = find_default_gateway(forwarding_table)
 
         # 4. }Generate a new forwarding table that includes the IP ranges for matching against destination IPS.
+        
         forwarding_table_with_range = generate_forwarding_table_with_range(forwarding_table)
 
         # 5. Read in and store the packets.
@@ -308,6 +316,9 @@ if __name__ == "__main__":
 
             # (a) send the new packet to the appropriate port (and append it to sent_by_router_1.txt),
             # router 1 is connected to router 2's interface (port 8002, hardcoded)
+
+            # https://stackoverflow.com/questions/34252273/what-is-the-difference-between-socket-send-and-socket-sendall 
+            
             if sending_port == '8002': # interface of router 2
                 print("Sending packet ", new_packet, "to Router 2") 
                 router2_socket.sendall(new_packet.encode())  # Send the packet to Router 2
