@@ -3,6 +3,7 @@ import sys
 import traceback
 from threading import Thread
 
+
 def read_forwarding_table(path):
     # 1. Open the file for reading.
     table_file = open(path, "r")

@@ -4,6 +4,25 @@ import time
 import os
 import glob
 
+
+# todo:
+# from skeleton code, ip_to_bin should be returning a binary representation (string value .. eg "0b11....")
+# netmask
+
+
+#  TODO for R1 (would likelyi fix issues for other routers too)
+#  R1 is fwding packets it shouldnt be. I think my generated fwding table is wrong too.
+# >> need to re-examine:
+# >> 
+# >> 1. ip_to_bin, should be returning a binary string. Double check every usage of ip_to_bin to ensure it's being handled properly, since originally i was converting to int within that.
+# >> 
+# >> 2. Check ip range function. Ranges could be incorrect.
+# >> 
+# >> 3. doublecheck that r1 is checking that dst is within range.
+# >> 
+# >> 4. re-examine forwarding table with ranges"
+
+
 # Helper Functions
 
 # The purpose of this function is to set up a socket connection.
