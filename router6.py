@@ -219,7 +219,7 @@ def start_server():
             connection, address = soc.accept()
             
             ip, port = address
-            print("Connected with " + ip + ":" + str(port))
+            print("Connected with " + str(ip) + ":" + str(port))
             # 6. Handle the connection and process the packet.
             try:
                 processing_thread(connection)

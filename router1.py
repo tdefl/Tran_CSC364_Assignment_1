@@ -79,8 +79,10 @@ def find_default_gateway(table):
     ## for ...:
     for network_dst, details in table.items():
         if network_dst == default_gateway:
+            print("Default gateway found")
             return details['interface'] # return the interface (MAC addr) of the gateway
     # if no default gateway found, return None
+    print("Default gateway not found")
     return None
 
 # The purpose of this function is to generate a forwarding table that includes the IP range for a given interface.
@@ -269,7 +271,7 @@ if __name__ == "__main__":
 
             # log dropped packets. 
             if new_ttl <= 0:
-                write_to_file('./output/dropped_packets_router_1.txt', str(new_packet))
+                write_to_file('./output/discarded_by_router_1.txt', str(new_packet))
                 print("DISCARD: ", new_packet)
                 continue
 
@@ -314,7 +316,7 @@ if __name__ == "__main__":
             # (b) append the payload to out_router_1.txt without forwarding because this router is the last hop
             elif destination_ip == "127.0.0.1":
                 print("OUT: " , payload)
-                write_to_file('./output/out_router_1.txt')
+                write_to_file('./output/out_router_1.txt', new_packet, sending_port)
 
             # (c) append the new packet to discarded_by_router_1.txt and do not forward the new packet   
             else: # destination_ip does not match any of the forwardsing tables entries.
