@@ -281,7 +281,7 @@ def start_server():
                 traceback.print_exc()
     finally:
         soc.close()
-        print("Server socket closed by Router 2")
+        print("Server socket closed by Router 6")
 
 # The purpose of this function is to receive and process incoming packets.
 def processing_thread(connection, ip, port, forwarding_table_with_range, default_gateway_port, max_buffer_size=5120):
