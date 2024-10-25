@@ -350,7 +350,7 @@ def processing_thread(connection, ip, port, forwarding_table_with_range, default
             
 
         
-        elif destinationIP == "127.0.0.1":  # If this is the final destination
+        elif sending_port == "127.0.0.1":  # If this is the final destination
             print("OUT:", payload)
             write_to_file('./output/out_router_4.txt', payload)
             
