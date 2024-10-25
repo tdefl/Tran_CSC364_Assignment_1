@@ -296,7 +296,7 @@ if __name__ == "__main__":
             #     "ttl" : ttl
             # }
             new_packet = f"{sourceIP},{destination_ip},{payload},{new_ttl}"
-
+            print("New packet constructed with updated ttl: ", new_packet)
             # log dropped packets. 
             if new_ttl <= 0:
                 write_to_file('./output/discarded_by_router_1.txt', str(new_packet))
@@ -304,14 +304,13 @@ if __name__ == "__main__":
                 continue
 
             # 9. Convert the destination IP into an integer for comparison purposes.
-            # destination_ip_bin = ip_to_bin(destination_ip)
-            # destination_ip_int = int(destination_ip_bin)
-            destination_ip_int = int(ip_to_bin(destination_ip))
-
+            destination_ip_bin = ip_to_bin(destination_ip)
+            destination_ip_int = int(destination_ip_bin, 2)
+            
             # 9. Find the appropriate sending port to forward this new packet to.
             sending_port = None
             
-            # Check which range it falls into
+            # Check which range it falls into. This is key for determining which port to send to. 
             for ip_dst, details in forwarding_table_with_range.items():
                 
                 # if details['min_ip'] <= destination_ip_bin and destination_ip_bin <= details['max_ip']:
