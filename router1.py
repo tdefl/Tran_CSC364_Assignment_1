@@ -195,20 +195,27 @@ def ip_to_bin(ip):
     return ip_bin
 
 # The purpose of this function is to find the range of IPs inside a given a destination IP address/subnet mask pair.
+
 def find_ip_range(network_dst_bin, netmask_bin):
+
     network_dst_int = int(network_dst_bin, 2)
     netmask_int = int(netmask_bin, 2)
+
     # Perform a bitwise AND to get the minimum IP
     min_ip = network_dst_int & netmask_int
 
+    # 2. Perform a bitwise NOT on the netmask
+    # to get the number of total IPs in this range.
+    # Because the built-in bitwise NOT or compliment operator (~) works with signed ints,
+    # we need to create our own bitwise NOT operator for our unsigned int (a netmask).
+
     # Perform a bitwise NOT on the netmask and add to the minimum IP to get the maximum IP
     compliment = bit_not(netmask_int, numbits=32)
-    max_ip = min_ip | compliment
+    max_ip = min_ip + compliment
 
-    # return a tuple for min, max
-    print("Min ip: " , min_ip)
-    print("Max ip: " , max_ip)
+    print("\n\nUsing integer addition: min_ip + complement, max ip is: ", max_ip )
     return [min_ip, max_ip]
+
 
 # The purpose of this function is to perform a bitwise NOT on an unsigned integer.
 def bit_not(n, numbits=32):
@@ -295,13 +302,11 @@ if __name__ == "__main__":
             #     "payload" : payload,
             #     "ttl" : ttl
             # }
+
             new_packet = f"{sourceIP},{destination_ip},{payload},{new_ttl}"
             print("New packet constructed with updated ttl: ", new_packet)
-            # log dropped packets. 
-            if new_ttl <= 0:
-                write_to_file('./output/discarded_by_router_1.txt', str(new_packet))
-                print("DISCARD: ", new_packet)
-                continue
+
+         
 
             # 9. Convert the destination IP into an integer for comparison purposes.
             destination_ip_bin = ip_to_bin(destination_ip)
@@ -334,12 +339,21 @@ if __name__ == "__main__":
 
             # https://stackoverflow.com/questions/34252273/what-is-the-difference-between-socket-send-and-socket-sendall 
             
-            if sending_port == '8002': # interface of router 2
+            # this shouldn't be handled outside like this. Instead, condition should route to next hop if sending port matches AND ttl > 0
+            # else it can be discarded. 
+
+            # # log dropped packets. 
+            # if new_ttl <= 0:
+            #     write_to_file('./output/discarded_by_router_1.txt', str(new_packet))
+            #     print("DISCARD: ", new_packet)
+            #     continue
+
+            if sending_port == '8002' and new_ttl > 0: # interface of router 2
                 print("Sending packet ", new_packet, "to Router 2") 
                 # router2_socket.sendall(new_packet.encode())  # Send the packet to Router 2
                 write_to_file('./output/sent_by_router_1.txt', new_packet, sending_port)
             # router 1 is connected to router 4's interface (port 8004, hardcoded)
-            elif sending_port == '8004':
+            elif sending_port == '8004' and new_ttl > 0:
                 print("Sending packet ", new_packet, "to Router 4")
                 # router4_socket.sendall(new_packet.encode())  # Send the packet to Router 4
                 write_to_file('./output/sent_by_router_1.txt', new_packet, sending_port)
