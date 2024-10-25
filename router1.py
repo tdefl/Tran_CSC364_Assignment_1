@@ -50,7 +50,6 @@ def read_forwarding_table(path):
     # 4. For each line in the file:
     
     # FIB allows routers to do fast lookup, so I'll use a dictionary for better lookup times than a list of lists
-   
     # for line in table:
     #     # split it into a list of strings by the delimiter using .split(","), 
     #     # remove any leading/trailing spaces using strip(), and append resulting list to table_list
@@ -140,9 +139,13 @@ def generate_forwarding_table_with_range(table):
         if network_dst != "0.0.0.0":  # Skip the default gateway
 
             netmask = details['netmask']
+            print("netmask: " , netmask)
             network_dst_bin = ip_to_bin(network_dst)
             netmask_bin = ip_to_bin(netmask)
-
+            print("Network dst int: ", network_dst)
+            print("Network Dst binary: ", network_dst_bin)
+            print("Netmask bin: ", netmask_bin)
+            
             # Calculate the IP range
             ip_range = find_ip_range(network_dst_bin, netmask_bin)
 
@@ -185,19 +188,21 @@ def ip_to_bin(ip):
         ip_bin_string += bin_octet_string
 
     # 9. Once the entire string version of the binary IP is created, convert it into an actual binary int.
-    ip_int = int(ip_bin_string, 2) # base 2 integer.
+    ip_int = int(ip_bin_string, 2) # binary string to integer conversion
 
-    # 10. Return the binary representation of this int.
-    
-    return ip_int
+    # 10. Return the binary representation of this int. (this formats it as 0bxxxxxxxx...)
+    ip_bin = bin(ip_int)
+    return ip_bin
 
 # The purpose of this function is to find the range of IPs inside a given a destination IP address/subnet mask pair.
 def find_ip_range(network_dst_bin, netmask_bin):
+    network_dst_int = int(network_dst_bin, 2)
+    netmask_int = int(netmask_bin, 2)
     # Perform a bitwise AND to get the minimum IP
-    min_ip = network_dst_bin & netmask_bin
+    min_ip = network_dst_int & netmask_int
 
     # Perform a bitwise NOT on the netmask and add to the minimum IP to get the maximum IP
-    compliment = bit_not(netmask_bin, numbits=32)
+    compliment = bit_not(netmask_int, numbits=32)
     max_ip = min_ip | compliment
 
     # return a tuple for min, max
@@ -208,14 +213,6 @@ def find_ip_range(network_dst_bin, netmask_bin):
 # The purpose of this function is to perform a bitwise NOT on an unsigned integer.
 def bit_not(n, numbits=32):
     return (1 << numbits) - 1 - n
-
-# test find_ip_range
-# 10.0.0.200,255.255.255.192,127.0.0.1,127.0.0.1
-test_network_dst = "10.0.0.200"
-test_network_dst_bin = ip_to_bin(test_network_dst)
-print("Testing find_ip_range: ")
-find_ip_range(test_network_dst_bin, 26)
-
 
 # The purpose of this function is to write packets/payload to file.
 def write_to_file(path, packet_to_write, send_to_router=None):
@@ -250,8 +247,8 @@ if __name__ == "__main__":
     # In the forwarding tables, each gateway is 127.0.0.1 since you are running each router
     # instance on your local machine.
 
-    router2_socket = create_socket('127.0.0.1', 8002)
-    router4_socket = create_socket('127.0.0.1', 8004)
+    # router2_socket = create_socket('127.0.0.1', 8002)
+    # router4_socket = create_socket('127.0.0.1', 8004)
 
 
     try:
@@ -309,7 +306,7 @@ if __name__ == "__main__":
             # 9. Convert the destination IP into an integer for comparison purposes.
             # destination_ip_bin = ip_to_bin(destination_ip)
             # destination_ip_int = int(destination_ip_bin)
-            destination_ip_int = ip_to_bin(destination_ip)
+            destination_ip_int = int(ip_to_bin(destination_ip))
 
             # 9. Find the appropriate sending port to forward this new packet to.
             sending_port = None
@@ -340,12 +337,12 @@ if __name__ == "__main__":
             
             if sending_port == '8002': # interface of router 2
                 print("Sending packet ", new_packet, "to Router 2") 
-                router2_socket.sendall(new_packet.encode())  # Send the packet to Router 2
+                # router2_socket.sendall(new_packet.encode())  # Send the packet to Router 2
                 write_to_file('./output/sent_by_router_1.txt', new_packet, sending_port)
             # router 1 is connected to router 4's interface (port 8004, hardcoded)
             elif sending_port == '8004':
                 print("Sending packet ", new_packet, "to Router 4")
-                router4_socket.sendall(new_packet.encode())  # Send the packet to Router 4
+                # router4_socket.sendall(new_packet.encode())  # Send the packet to Router 4
                 write_to_file('./output/sent_by_router_1.txt', new_packet, sending_port)
             # (b) append the payload to out_router_1.txt without forwarding because this router is the last hop
             elif destination_ip == "127.0.0.1":
@@ -361,6 +358,6 @@ if __name__ == "__main__":
             time.sleep(1)
 
     finally:
-        router2_socket.close()
-        router4_socket.close()
+        # router2_socket.close()
+        # router4_socket.close()
         print("Connections closed by Router 1")
