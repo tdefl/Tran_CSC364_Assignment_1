@@ -259,8 +259,8 @@ if __name__ == "__main__":
     # In the forwarding tables, each gateway is 127.0.0.1 since you are running each router
     # instance on your local machine.
 
-    # router2_socket = create_socket('127.0.0.1', 8002)
-    # router4_socket = create_socket('127.0.0.1', 8004)
+    router2_socket = create_socket('127.0.0.1', 8002)
+    router4_socket = create_socket('127.0.0.1', 8004)
 
 
     try:
@@ -363,12 +363,12 @@ if __name__ == "__main__":
 
             if sending_port == '8002' and new_ttl > 0: # interface of router 2
                 print("Sending packet ", new_packet, "to Router 2") 
-                # router2_socket.sendall(new_packet.encode())  # Send the packet to Router 2
+                router2_socket.sendall(new_packet.encode())  # Send the packet to Router 2
                 write_to_file('./output/sent_by_router_1.txt', new_packet, sending_port)
             # router 1 is connected to router 4's interface (port 8004, hardcoded)
             elif sending_port == '8004' and new_ttl > 0:
                 print("Sending packet ", new_packet, "to Router 4")
-                # router4_socket.sendall(new_packet.encode())  # Send the packet to Router 4
+                router4_socket.sendall(new_packet.encode())  # Send the packet to Router 4
                 write_to_file('./output/sent_by_router_1.txt', new_packet, sending_port)
             # (b) append the payload to out_router_1.txt without forwarding because this router is the last hop
             elif sending_port == "127.0.0.1": # changed this from destination_ip == "127.0.0.1"
@@ -384,6 +384,6 @@ if __name__ == "__main__":
             time.sleep(1)
 
     finally:
-        # router2_socket.close()
-        # router4_socket.close()
+        router2_socket.close()
+        router4_socket.close()
         print("Connections closed by Router 1")
