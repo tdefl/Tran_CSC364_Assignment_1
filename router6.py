@@ -3,6 +3,24 @@ import sys
 import traceback
 from threading import Thread
 
+# Router 2 acts as both a server and client, it must be able to send (forward to next hop), or act as the final destination. 
+# Helper Functions
+
+# The purpose of this function is to set up a socket connection.
+def create_socket(host, port):
+    # 1. Create a socket.
+    soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # 2. Try connecting the socket to the host and port.
+    try:
+        soc.connect((host, port))
+    except:
+        print("Connection Error to", port)
+        sys.exit()
+    # 3. Return the connected socket.
+    return soc
+
+# should be same as router1
+# The purpose of this function is to read in a CSV file.
 def read_forwarding_table(path):
     # 1. Open the file for reading.
     table_file = open(path, "r")
@@ -29,6 +47,7 @@ def read_forwarding_table(path):
 
     # Close the csv file and return the parsed forwarding table.
     table_file.close()
+    print("Router 2 FIB: ", forwarding_dict)
     return forwarding_dict
 
 # another csv parsing function, but for packets.
@@ -64,28 +83,34 @@ def find_default_gateway(table):
 # In other words, this table will help the router answer the question:
 # Given this packet's destination IP, which interface (i.e., port) should I send it out on?
 def generate_forwarding_table_with_range(table):
+    
     new_table = {}
 
     for network_dst, details in table.items():
 
         if network_dst != "0.0.0.0":  # Skip the default gateway
-
+            # ngl maybe a list implementation wouldve been simpler.
             netmask = details['netmask']
+            print("netmask: " , netmask)
             network_dst_bin = ip_to_bin(network_dst)
             netmask_bin = ip_to_bin(netmask)
-
+            print("Network dst int: ", network_dst)
+            print("Network Dst binary: ", network_dst_bin)
+            print("Netmask bin: ", netmask_bin)
+            
             # Calculate the IP range
             ip_range = find_ip_range(network_dst_bin, netmask_bin)
 
             # Store the range along with the other details in the new table
+            # this maps the original FIB network dst with a subdictionary containing min/max ip, gateway, and interface. 
             new_table[network_dst] = {
                 'min_ip': ip_range[0],
                 'max_ip': ip_range[1],
                 'gateway': details['gateway'],
                 'interface': details['interface']
             }
+    print("Forwarding Table with Range: " , new_table, "\n\n\n")
     return new_table
-
 
 # The purpose of this function is to convert a string IP to its binary representation.
 def ip_to_bin(ip):
@@ -116,22 +141,34 @@ def ip_to_bin(ip):
         ip_bin_string += bin_octet_string
 
     # 9. Once the entire string version of the binary IP is created, convert it into an actual binary int.
-    ip_int = int(ip_bin_string, 2) # base 2 integer.
+    ip_int = int(ip_bin_string, 2) # binary string to integer conversion
 
-    # 10. Return the binary representation of this int.
-    return ip_int
+    # 10. Return the binary representation of this int. (this formats it as 0bxxxxxxxx...)
+    ip_bin = bin(ip_int)
+    return ip_bin
 
 # The purpose of this function is to find the range of IPs inside a given a destination IP address/subnet mask pair.
+
 def find_ip_range(network_dst_bin, netmask_bin):
+
+    network_dst_int = int(network_dst_bin, 2)
+    netmask_int = int(netmask_bin, 2)
+
     # Perform a bitwise AND to get the minimum IP
-    min_ip = network_dst_bin & netmask_bin
+    min_ip = network_dst_int & netmask_int
+
+    # 2. Perform a bitwise NOT on the netmask
+    # to get the number of total IPs in this range.
+    # Because the built-in bitwise NOT or compliment operator (~) works with signed ints,
+    # we need to create our own bitwise NOT operator for our unsigned int (a netmask).
 
     # Perform a bitwise NOT on the netmask and add to the minimum IP to get the maximum IP
-    compliment = bit_not(netmask_bin, numbits=32)
-    max_ip = min_ip | compliment
+    compliment = bit_not(netmask_int, numbits=32)
+    max_ip = min_ip + compliment
 
-    # return a tuple for min, max
+    print("\n\nUsing integer addition: min_ip + complement, max ip is: ", max_ip , "\n\n")
     return [min_ip, max_ip]
+
 
 # The purpose of this function is to perform a bitwise NOT on an unsigned integer.
 def bit_not(n, numbits=32):
@@ -155,9 +192,9 @@ def receive_packet(connection, max_buffer_size):
     if not decoded_packet:
             return None
     
-    # 3. Append the packet to received_by_router_2.txt.
+    # 3. Append the packet to received_by_router_6.txt.
     write_to_file('./output/received_by_router_6.txt', decoded_packet)
-    print("received packet", decoded_packet)
+    # print("received packet", decoded_packet)
     ## ...
     # 4. Split the packet by the delimiter.
     packet_details = decoded_packet.split(",")
@@ -169,6 +206,9 @@ def receive_packet(connection, max_buffer_size):
         'payload': packet_details[2],
         'ttl': int(packet_details[3])
     }
+
+
+
 
 
 # The purpose of this function is to write packets/payload to file.
@@ -186,75 +226,166 @@ def write_to_file(path, packet_to_write, send_to_router=None):
     # 4. Close the output file after finished writing to it.
     out_file.close()
 
-
-
 # The purpose of this function is to
 # (a) create a server socket,
 # (b) listen on a specific port,
-# (c) receive and process incoming packets.
+# (c) receive and process incoming packets,
+# (d) forward them on, if needed.
 def start_server():
     # 1. Create a socket.
     host = '127.0.0.1'
-    port = 8006 # Router 6
+    port = 8006
     soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     soc.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     print("Socket created")
-
+    
     try:
-        # 2. Try binding the socket to the appropriate host and receiving port.
+        # 2. Try binding the socket to the appropriate host and receiving port (based on the network topology diagram).
         try:
-            soc.bind((host, port))  # bind so it can act as a server and listen
+            soc.bind((host, port)) # bind so it can act as a server and listen
         except:
             print("Bind failed. Error : " + str(sys.exc_info()))
             sys.exit()
 
-        # 3. Set the socket to listen.
+        
+        # 3. Set the socket to listen. https://stackoverflow.com/questions/2444459/python-sock-listen
         soc.listen(5)
-        print("Router 6 is now listening on port", port)
 
-        # 4. Continuously process incoming packets.
+        print("Socket now listening")
+
+        # 4. Read in and store the forwarding table.
+        forwarding_table_path = "input/router_6_table.csv"
+        forwarding_table = read_forwarding_table(forwarding_table_path)
+
+        # 5. Store the default gateway port.
+        default_gateway_port = find_default_gateway(forwarding_table)
+        print("Default gateway port stored: ", default_gateway_port, "\n\n")
+        # 6. Generate a new forwarding table that includes the IP ranges for matching against destination IPS.
+        print("Call generate_forwarding_table_with_range")
+        forwarding_table_with_range = generate_forwarding_table_with_range(forwarding_table)
+        
+        # 7. Continuously process incoming packets.
         while True:
-            # 5. Accept the connection.
+            # 8. Accept the connection.
             connection, address = soc.accept()
             
             ip, port = address
             print("Connected with " + str(ip) + ":" + str(port))
-            # 6. Handle the connection and process the packet.
+            # 9. Start a new thread for receiving and processing the incoming packets.
             try:
-                processing_thread(connection)
+                thread = Thread(target=processing_thread, args=(connection, ip, port, forwarding_table_with_range, default_gateway_port))
+                thread.start()
             except:
-                print("Error processing connection.")
+                print("Thread did not start.")
                 traceback.print_exc()
-            finally:
-                connection.close()
-                print("Connection closed by Router 6")
     finally:
         soc.close()
-        print("Router 6 socket closed")
+        print("Server socket closed by Router 2")
 
 # The purpose of this function is to receive and process incoming packets.
-def processing_thread(connection, max_buffer_size=5120):
+def processing_thread(connection, ip, port, forwarding_table_with_range, default_gateway_port, max_buffer_size=5120):
+    # 1. Connect to the appropriate sending ports (based on the network topology diagram).
+    
+    # router 3 wont need to send to R4
+    # 2. Continuously process incoming packets
     while True:
-        # 1. Receive the incoming packet, process it, and store its list representation.
+        # 3. Receive the incoming packet, process it, and store its list representation
+        # packet = connection.recv(max_buffer_size).decode().strip()
         packet = receive_packet(connection, max_buffer_size)
-        
-        # 2. If the packet is empty (no more data), break out of the processing loop.
+        # 4. If the packet is empty (Router 1 has finished sending all packets), break out of the processing loop
         if not packet:
-            print("No more packets received. Closing connection.")
+            print("No more packets recevied. Router 1 has finished sending")
             break
+       
+#           # 7. Store the source IP, destination IP, payload, and TTL.
+            #     sourceIP        = packet["source_ip"]
+            #     destination_ip   = packet["destination_ip"]
+            #     payload         = packet["payload"]
+            #     ttl             = packet["ttl"]
+
+        # hmmm
+        # 5. Store the source IP, destination IP, payload, and TTL.
+        # packet_details = packet.split(",")
+        # sourceIP = packet_details[0]
+        # destinationIP = packet_details[1]
+        # payload = packet_details[2]
+        # ttl = int(packet_details[3])
         
-        # 3. Store the source IP, destination IP, payload, and TTL.
-        source_ip = packet['source_ip']
-        destination_ip = packet['destination_ip']
+        sourceIP = packet['source_ip']
+        destinationIP = packet['destination_ip']
         payload = packet['payload']
         ttl = packet['ttl']
 
-        # 4. Log the payload to file (or any other processing needed).
-        write_to_file('./output/out_router_6.txt', f"Source: {source_ip}, Payload: {payload}")
+        # 6. Decrement the TTL by 1 and construct a new packet with the new TTL.
+        new_ttl = ttl - 1
+        new_packet = f"{sourceIP},{destinationIP},{payload},{new_ttl}"
+        print("\nNew packet constructed with updated ttl: ", new_packet)
+
+        # 7. Convert the destination IP into an integer for comparison purposes.
+       # 9. Convert the destination IP into an integer for comparison purposes.
+        destination_ip_bin = ip_to_bin(destinationIP)
+        destination_ip_int = int(destination_ip_bin, 2)
+        
+
+        # 9. Find the appropriate sending port to forward this new packet to.
+        sending_port = default_gateway_port
+        
+        # Check which range it falls into, and decide what port to send to.
+        for ip_dst, details in forwarding_table_with_range.items():
+            # if new_ttl <= 0:
+            # write_to_file('./output/discarded_by_router_6.txt', new_packet)
+            # print("DISCARD: ", new_packet)
+            # if details['min_ip'] <= destination_ip_bin and destination_ip_bin <= details['max_ip']:
+            if details['min_ip'] <= destination_ip_int and destination_ip_int <= details['max_ip']:
+                print(f"\n\nChecking packet destination: {destinationIP}, converted into {destination_ip_int} against range {details['min_ip']} - {details['max_ip']} \n\n")
+                sending_port = details['interface']
+                print("interface found, sending to: ", sending_port)
+                break # so not including breaks was the issue, because router 1 would just iterate thru the entire FIB even if a match was already found.
+            # 10. If no port is found, then set the sending port to the default port.
+            # else:
+            #     print("sending to default gateway port")
+            #     sending_port = default_gateway_port
+            #     break
+            
+
+    
+
+        # 11. Either
+        # (a) send the new packet to the appropriate port (and append it to sent_by_router_6.txt),
+        # (b) append the payload to out_router_6.txt without forwarding because this router is the last hop, or
+        # (c) append the new packet to discarded_by_router_6.txt and do not forward the new packet
+        # if sending_port == 'd' and new_ttl > 0:
+        #     print("Sending packet", new_packet, "to Router 3")
+        #     router5_socket.sendall(new_packet.encode())
+        #     write_to_file('./output/sent_by_router_6.txt', new_packet, sending_port)
+        
+        # elif sending_port == '8006' and new_ttl > 0:  # Router 4's interface
+        #     print("Sending packet", new_packet, "to Router 4")
+        #     router6_socket.sendall(new_packet.encode())
+
+        #     write_to_file('./output/sent_by_router_6.txt', new_packet, sending_port)
+        # elif sending_port == 'a' and new_ttl > 0:
+        #     # send back to R1
+        #     connection.sendall(new_packet.encode())
+        #     print("R2 send packet to R1")
+        #     write_to_file('./output/sent_by_router_6.txt', new_packet, "a")
+
+        if sending_port == "127.0.0.1":  # If this is the final destination
+            print("OUT:", payload)
+            write_to_file('./output/out_router_6.txt', payload)
+        
+        else:  # If it doesn't match any, entries in FIB
+            print("DISCARD:", new_packet)
+            write_to_file('./output/discarded_by_router_6.txt', new_packet)
+    
+    
+    # router5_socket.close()
+    # router6_socket.close()
+    connection.close()
+    print("Connections closed by router 6")
 
 # Main Program
-
-# 1. Start Router 6's server.
-if __name__ == "__main__":
+# 1. Start the server.
+if __name__ == "__main__":  
     start_server()

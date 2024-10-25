@@ -375,7 +375,7 @@ if __name__ == "__main__":
             # (b) append the payload to out_router_1.txt without forwarding because this router is the last hop
             elif sending_port == "127.0.0.1": # changed this from destination_ip == "127.0.0.1"
                 print("OUT: " , payload)
-                write_to_file('./output/out_router_1.txt', new_packet, sending_port)
+                write_to_file('./output/out_router_1.txt', payload)
 
             # (c) append the new packet to discarded_by_router_1.txt and do not forward the new packet   
             else: # destination_ip does not match any of the forwardsing tables entries.
