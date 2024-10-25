@@ -22,6 +22,9 @@ import glob
 # >> 
 # >> 4. re-examine forwarding table with ranges"
 
+# 10.25.24
+# 1 and 2 should be correct now. (weren't wrong to begin with)
+#
 
 # Helper Functions
 
@@ -97,7 +100,7 @@ def find_default_gateway(table):
     ## for ...:
     for network_dst, details in table.items():
         if network_dst == default_gateway:
-            print("Default gateway found: ", default_gateway)
+            print("\n\nDefault gateway found: ", default_gateway)
             return details['interface'] # return the interface (MAC addr) of the gateway
     # if no default gateway found, return None
     print("Default gateway not found")
@@ -132,12 +135,13 @@ def find_default_gateway(table):
 # hmm...
 # generates a new forwarding table from the old one, with the additional inclusion of ip range.
 def generate_forwarding_table_with_range(table):
+    
     new_table = {}
 
     for network_dst, details in table.items():
 
         if network_dst != "0.0.0.0":  # Skip the default gateway
-
+            # ngl maybe a list implementation wouldve been simpler.
             netmask = details['netmask']
             print("netmask: " , netmask)
             network_dst_bin = ip_to_bin(network_dst)
@@ -150,13 +154,14 @@ def generate_forwarding_table_with_range(table):
             ip_range = find_ip_range(network_dst_bin, netmask_bin)
 
             # Store the range along with the other details in the new table
+            # this maps the original FIB network dst with a subdictionary containing min/max ip, gateway, and interface. 
             new_table[network_dst] = {
                 'min_ip': ip_range[0],
                 'max_ip': ip_range[1],
                 'gateway': details['gateway'],
                 'interface': details['interface']
             }
-    print("Forwarding Table with Range: " , new_table)
+    print("Forwarding Table with Range: " , new_table, "\n\n\n")
     return new_table
 
 # The purpose of this function is to convert a string IP to its binary representation.
@@ -213,11 +218,11 @@ def find_ip_range(network_dst_bin, netmask_bin):
     compliment = bit_not(netmask_int, numbits=32)
     max_ip = min_ip + compliment
 
-    print("\n\nUsing integer addition: min_ip + complement, max ip is: ", max_ip )
+    print("\n\nUsing integer addition: min_ip + complement, max ip is: ", max_ip , "\n\n")
     return [min_ip, max_ip]
 
 
-# The purpose of this function is to perform a bitwise NOT on an unsigned integer.
+# The purpose of this function is to perform a bitwise NOT on an unsigned integefr.
 def bit_not(n, numbits=32):
     return (1 << numbits) - 1 - n
 
@@ -265,13 +270,14 @@ if __name__ == "__main__":
         forwarding_table_path = os.path.join(inputs_dir, FIB_filename)
 
         forwarding_table = read_forwarding_table(forwarding_table_path)
-        print(forwarding_table) # for debugging
+        print("\n\nOriginal FIB: ", forwarding_table, "\n\n\n\n") # for debugging
 
         # 3. Store the default gateway port.
         default_gateway_port = find_default_gateway(forwarding_table)
+        print("Default gateway port stored: ", default_gateway_port, "\n\n")
 
         # 4. }Generate a new forwarding table that includes the IP ranges for matching against destination IPS.
-        
+        print("Call generate_forwarding_table_with_range")
         forwarding_table_with_range = generate_forwarding_table_with_range(forwarding_table)
 
         # 5. Read in and store the packets.
@@ -279,7 +285,7 @@ if __name__ == "__main__":
         packets_table_path = os.path.join(inputs_dir, packets_filename)
         packets_table = read_packets(packets_table_path)
 
-        print(packets_table)
+        # print("\n\nPackets table: " , packets_table, "\n\n")
 
         # Ensure the output directory exists
         if not os.path.exists('./output'):
@@ -287,6 +293,7 @@ if __name__ == "__main__":
 
         # # 6. For each packet,
         for packet in packets_table:
+            print("\n\n\nprocessing next packet\n\n\n")
             # 7. Store the source IP, destination IP, payload, and TTL.
             sourceIP        = packet["source_ip"]
             destination_ip   = packet["destination_ip"]
@@ -296,6 +303,7 @@ if __name__ == "__main__":
         
             # 8. Decrement the TTL by 1 and construct a new packet with the new TTL.
             new_ttl = ttl - 1
+
             # new_packet = {
             #     "source_ip" : sourceIP,
             #     "destination_ip" : destination_ip,
@@ -304,7 +312,7 @@ if __name__ == "__main__":
             # }
 
             new_packet = f"{sourceIP},{destination_ip},{payload},{new_ttl}"
-            print("New packet constructed with updated ttl: ", new_packet)
+            print("\nNew packet constructed with updated ttl: ", new_packet)
 
          
 
@@ -312,19 +320,24 @@ if __name__ == "__main__":
             destination_ip_bin = ip_to_bin(destination_ip)
             destination_ip_int = int(destination_ip_bin, 2)
             
+    
             # 9. Find the appropriate sending port to forward this new packet to.
             sending_port = None
             
-            # Check which range it falls into. This is key for determining which port to send to. 
+            # Check which range it falls into, and decide what port to send to.
             for ip_dst, details in forwarding_table_with_range.items():
                 
                 # if details['min_ip'] <= destination_ip_bin and destination_ip_bin <= details['max_ip']:
                 if details['min_ip'] <= destination_ip_int and destination_ip_int <= details['max_ip']:
+                    print(f"\n\nChecking packet destination: {destination_ip}, converted into {destination_ip_int} against range {details['min_ip']} - {details['max_ip']} \n\n")
                     sending_port = details['interface']
-                
+                    print("interface found, sending to: ", sending_port)
+                    break # so not including breaks was the issue, because router 1 would just iterate thru the entire FIB even if a match was already found.
                 # 10. If no port is found, then set the sending port to the default port.
                 else:
+                    print("sending to default gateway port")
                     sending_port = default_gateway_port
+                    break
             
 
             # 11. Either
@@ -358,7 +371,7 @@ if __name__ == "__main__":
                 # router4_socket.sendall(new_packet.encode())  # Send the packet to Router 4
                 write_to_file('./output/sent_by_router_1.txt', new_packet, sending_port)
             # (b) append the payload to out_router_1.txt without forwarding because this router is the last hop
-            elif destination_ip == "127.0.0.1":
+            elif sending_port == "127.0.0.1": # changed this from destination_ip == "127.0.0.1"
                 print("OUT: " , payload)
                 write_to_file('./output/out_router_1.txt', new_packet, sending_port)
 

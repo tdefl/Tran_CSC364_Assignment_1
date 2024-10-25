@@ -117,3 +117,13 @@ print("Max ip: ", max_ip)
 
 print("actual max ip: " , actual_max_ip)
 print(max_ip==actual_max_ip)
+
+
+
+# now test a packet that SHOULD BE GOING TO ROUTER 1
+destination_ip = "10.0.0.227"
+destination_ip_bin = ip_to_bin(destination_ip)
+destination_ip_int = int(destination_ip_bin, 2)
+print("Destination_ip: ", destination_ip_int)
+
+print("dest ip is within range for router1 as a destination: ", min_ip <= destination_ip_int <= max_ip)
